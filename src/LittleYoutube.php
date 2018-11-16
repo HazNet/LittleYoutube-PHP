@@ -493,7 +493,17 @@ namespace LittleYoutube{
 			try{
 				$playerID = explode("/yts/jsbin/player", $playerURL)[1];
 				$playerID = explode("-", explode("/", $playerID)[0]);
-				$playerID = $playerID[count($playerID)-1];
+
+				for ($i = count($playerID); $i >= 0; $i--) { 
+					if($playerID[count($playerID)-1]){
+						$playerID = $playerID[count($playerID)-1];
+						break;
+					}
+
+					// if reached the last data
+					elseif($i === 0)
+						$playerID = 'temporary';
+				}
 			} catch(\Exception $e){
 				$this->onError("Failed to parse playerID from player url: ".$playerURL);
 				return false;
@@ -548,7 +558,7 @@ namespace LittleYoutube{
 			$this->signatureDebug('decipherPatterns = '.$decipherPatterns."\n");
 		
 			preg_match_all('/(?<=;).*?(?=\[|\.)/', $decipherPatterns, $deciphers);
-			if($deciphers && count($deciphers[0]) > 2){
+			if($deciphers && count($deciphers[0]) >= 2){
 				$deciphers = $deciphers[0][0];
 			}
 			else{
