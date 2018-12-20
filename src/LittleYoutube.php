@@ -24,7 +24,7 @@ namespace LittleYoutube{
 			if($options)
 				$this->settings = array_replace($this->settings, $options);
 			$this->settings['temporaryDirectory'] = $this->settings['temporaryDirectory'].DIRECTORY_SEPARATOR;
-			if($this->settings['temporaryDirectory']==DIRECTORY_SEPARATOR){
+			if($this->settings['temporaryDirectory'] == DIRECTORY_SEPARATOR){
 				$this->onError("Can't find temporary folder");
 			} elseif(!is_writable($this->settings['temporaryDirectory'])){
 				$this->onError("Temporary isn't writeable - change the folder permission to 777");
@@ -41,6 +41,8 @@ namespace LittleYoutube{
 			if(!$this->settings)
 				$this->settings = [
 					"temporaryDirectory"=>realpath(__DIR__."/../example/temp"),
+					"ffmpeg"=>"ffmpeg",
+					"cacheDuration"=>3600,
 					"signatureDebug"=>false,
 					"processDetail"=>true,  // Set it to false if you don't need to download the video data
 					"useRedirector"=>false, // Optional if the video can't be downloaded on some country
@@ -63,21 +65,21 @@ namespace LittleYoutube{
 	{
 		public function init($url)
 		{
-			if(explode('http', $url)[0]!=''){
+			if(explode('http', $url)[0] !== ''){
 				$this->onError("Invalid URL");
 				return false;
 			}
 			$id = $url;
-			if(strpos($id, '/watch?v=')!==false){
+			if(strpos($id, '/watch?v=') !== false){
 				$id = explode('/watch?v=', $id)[1];
-				if(strpos($id, '#')!==false){
+				if(strpos($id, '#') !== false){
 					$id = explode('#', $id)[0];
 				}
-				if(strpos($id, '&')!==false){
+				if(strpos($id, '&') !== false){
 					$id = explode('&', $id)[0];
 				}
 			}
-			else if(strpos($id, 'youtu.be/')!==false){
+			else if(strpos($id, 'youtu.be/') !== false){
 				$id = explode('youtu.be/', $id)[1];
 				$id = explode('?', $id)[0];
 			}
@@ -94,9 +96,9 @@ namespace LittleYoutube{
 				return false;
 			}
 
-			if($this->settings['processVideoFrom']=='VideoPage'){
+			if($this->settings['processVideoFrom'] === 'VideoPage'){
 				$data = \ScarletsFiction\WebApi::loadURL('https://www.youtube.com/watch?v='.$id)['content'];
-				if(strpos($data, 'Sorry for the interruption')!==false){
+				if(strpos($data, 'Sorry for the interruption') !== false){
 					$this->onError("Need to solve captcha from youtube");
 					return false;
 				}
@@ -147,7 +149,7 @@ namespace LittleYoutube{
 				}
 				$data = $data['args'];
 			}
-			elseif($this->settings['processVideoFrom']=='VideoInfo'){
+			elseif($this->settings['processVideoFrom'] === 'VideoInfo'){
 				$data_ = \ScarletsFiction\WebApi::loadURL('http://www.youtube.com/get_video_info?video_id='.$id."&el=detailpage&hl=en_US")['content'];
 				parse_str($data_, $data);
 			}
@@ -193,7 +195,7 @@ namespace LittleYoutube{
 
 		private function parseVideoDetailFallback($data){
 			$panelDetails = explode('"action-panel-details"', $data);
-			if(count($panelDetails)==1){
+			if(count($panelDetails) === 1){
 				$this->onError("Failed to parse video details");
 				file_put_contents($this->settings['temporaryDirectory'].'error.log', $data);
 				return false;
@@ -271,7 +273,7 @@ namespace LittleYoutube{
 				// The video signature need to be deciphered
 				if(isset($map_info['s']))
 				{
-					if(strpos($map_info['url'], 'ratebypass=')===false)
+					if(strpos($map_info['url'], 'ratebypass=') === false)
 						$map_info['url'] .= '&ratebypass=yes';
 
 					// Renew decipher script if first try was failed
@@ -316,13 +318,13 @@ namespace LittleYoutube{
 			if(count($languageCodeOrURL)<=5){
 				// Check youtube url and return if it's not a youtube url
 				$url_ = explode('http://www.youtube.com/api', $languageCodeOrURL);
-				if($url_[0]!=''){
+				if($url_[0] !== ''){
 					$this->onError('Youtube api url was different');
 					return false;
 				}
 				$languageCode = $languageCodeOrURL;
-				for ($i=0; $i < count($this->data['subtitle']); $i++) { 
-					if($this->data['subtitle'][$i]['lang'] == $languageCode){
+				for ($i = 0; $i < count($this->data['subtitle']); $i++) { 
+					if($this->data['subtitle'][$i]['lang'] === $languageCode){
 						break;
 					}
 				}
@@ -354,7 +356,7 @@ namespace LittleYoutube{
 				$value['duration'] = explode('"', explode('dur="', $value['when'])[1])[0];
 				unset($value['when']);
 			}
-			if($as=='srt'){
+			if($as === 'srt'){
 				$srt = '';
 				for($i=0; $i<count($data); $i++){
 					$srt .= "\n".($i+1)."\n";
@@ -369,10 +371,10 @@ namespace LittleYoutube{
 					$srt .= "\n";
 				}
 				return $srt;
-			} elseif($as=='text') {
+			} elseif($as === 'text') {
 				$text = '';
 				for($i=0; $i<count($data); $i++){
-					if($i!=0) $text .= "\n";
+					if($i !== 0) $text .= "\n";
 					$text .= $data[$i]['text'];
 				}
 				return $text;
@@ -396,7 +398,7 @@ namespace LittleYoutube{
 
 			for ($i=0; $i < count($list)-1; $i++) {
 				$s1 = \ScarletsFiction\WebApi::urlContentSize($list[$i]);
-				if($s1!=0) break;
+				if($s1 !== 0) break;
 				array_splice($list, 0, 1);
 			}
 
@@ -405,14 +407,14 @@ namespace LittleYoutube{
 
 		private function getLatestPlayerScript($forceReset){
 			if(!$forceReset){
-				if(isset($this->classData['signature'])&&isset($this->classData['signature']['patterns'])){
+				if(isset($this->classData['signature']) && isset($this->classData['signature']['patterns'])){
 					return true; // Decipher already loaded
 				}
 
 				elseif(!isset($this->classData['signature'])||!isset($this->classData['signature']['patterns'])){
 					// Load decipher from file
 					$decipherPath = $this->settings['temporaryDirectory'].'decipherData.inf';
-					if(file_exists($decipherPath)&&filemtime($decipherPath)>=(time()-21600)){
+					if(file_exists($decipherPath) && filemtime($decipherPath) >= (time() - $this->settings['cacheDuration'])){
 						$this->classData['signature'] = json_decode(file_get_contents($this->settings['temporaryDirectory'].'decipherData.inf'), true);
 						if(!json_last_error())
 							return true;
@@ -429,6 +431,7 @@ namespace LittleYoutube{
 				$this->getSignatureParser();
 				return true;
 			}
+
 			// If current player id is set, then load from it
 			if(isset($this->data['playerID'])){
 				if(!file_exists($this->settings['temporaryDirectory'].$this->data['playerID'].'.js')){
@@ -440,16 +443,16 @@ namespace LittleYoutube{
 
 			// Find newest player script file
 			$files = glob($this->settings['temporaryDirectory']."*.js");
-			if(count($files)==0){
+			if(count($files) === 0){
 				$this->getPlayerScript(false, $this->data['videoID']);
 				$this->getSignatureParser();
 				return true;
 			}
 			$last = [];
 			for ($i=0; $i < count($files); $i++){
-				if(filesize($files[$i])>1000000){
+				if(filesize($files[$i]) > 400000){
 					$ftime = filemtime($files[$i]);
-					if($ftime>=(time()-21600)){
+					if($ftime >= (time() - $this->settings['cacheDuration'])){
 						$last[$files[$i]] = $ftime;
 						continue;
 					} 
@@ -469,10 +472,10 @@ namespace LittleYoutube{
 			}
 		}
 
-		private function getPlayerScript($playerURL, $fromVideoID=false){
+		private function getPlayerScript($playerURL, $fromVideoID = false){
 			if($fromVideoID){
 				$data = \ScarletsFiction\WebApi::loadURL('https://www.youtube.com/watch?v='.$fromVideoID)['content'];
-				if(strpos($data, 'Sorry for the interruption')!==false){
+				if(strpos($data, 'Sorry for the interruption') !== false){
 					$this->onError("Need to solve captcha from youtube");
 					return false;
 				}
@@ -480,11 +483,12 @@ namespace LittleYoutube{
 				$data = explode('"', $data)[0];
 				$playerURL = "/yts/jsbin/player".$data;
 			}
+
 			if(!isset($this->classData['playerScriptDownloaded']))
 				$this->classData['playerScriptDownloaded'] = 1;
 			else{
 				$this->classData['playerScriptDownloaded']++;
-				if($this->classData['playerScriptDownloaded']>=5){
+				if($this->classData['playerScriptDownloaded'] >= 5){
 					$this->onError("Some error loop detected: player script has been downloaded 5 times");
 					return false;
 				}
@@ -677,22 +681,22 @@ namespace LittleYoutube{
 	{
 		public function init($url)
 		{
-			if(explode('http', $url)[0]!=''){
+			if(explode('http', $url)[0] !== ''){
 				$this->onError("Invalid URL");
 				return false;
 			}
 			$id = $url;
-			if(strpos($id, '/user/')!==false){
+			if(strpos($id, '/user/') !== false){
 				$id = explode('/user/', $id)[1];
 				$id = explode('/', $id)[0];
 				$id = explode('?', $id)[0];
 				$this->data['userID'] = explode('?', $id)[0];
 			}
-			else if(strpos($id, 'channel_id=')!==false){
+			else if(strpos($id, 'channel_id=') !== false){
 				$id = explode('channel_id=', $id)[1];
 				$this->data['channelID'] = explode('&', $id)[0];
 			}
-			else if(strpos($id, '/channel/')!==false){
+			else if(strpos($id, '/channel/') !== false){
 				$id = explode('/channel/', $id)[1];
 				$this->data['channelID'] = explode('&', $id)[0];
 			}
@@ -766,12 +770,12 @@ namespace LittleYoutube{
 	{
 		public function init($url)
 		{
-			if(explode('http', $url)[0]!=''){
+			if(explode('http', $url)[0] !== ''){
 				$this->onError("Invalid URL");
 				return false;
 			}
 			$id = $url;
-			if(strpos($id, 'list=')!==false){
+			if(strpos($id, 'list=') !== false){
 				$id = explode('list=', $id)[1];
 				$this->data['playlistID'] = explode('&', $id)[0];
 			}
@@ -782,12 +786,12 @@ namespace LittleYoutube{
 
 		public function processDetails(){
 			$data = \ScarletsFiction\WebApi::loadURL('https://www.youtube.com/playlist?list='.$this->data['playlistID'])['content'];
-			if(strpos($data, 'Sorry for the interruption')!==false){
+			if(strpos($data, 'Sorry for the interruption') !== false){
 				$this->onError("Need to solve captcha from youtube");
 				return false;
 			}
 			$data = explode('data-title="', $data);
-			if(count($data)==1){
+			if(count($data) === 1){
 				$data = explode('ytInitialData"] = ', $data[0])[1];
 				$data = explode('};', $data)[0].'}';
 				$data = json_decode($data, true);
@@ -853,16 +857,16 @@ namespace LittleYoutube{
 			$data = \ScarletsFiction\WebApi::loadURL($url)['content'];
 			$this->data['videos'] = [];
 
-			if(strpos($data, 'Sorry for the interruption')!==false){
+			if(strpos($data, 'Sorry for the interruption') !== false){
 				$this->onError("Need to solve captcha from youtube");
 				return false;
 			}
 			unset($this->data['next']);
 
 			$data = explode('yt-lockup-title', $data);
-			if(count($data)==1){
+			if(count($data) === 1){
 				$data = explode('ytInitialData"] = ', $data[0]);
-				if(count($data)==1){
+				if(count($data) === 1){
 					$this->onError("Failed to obtain data");
 					return false;
 				}
@@ -897,7 +901,7 @@ namespace LittleYoutube{
 				$dataCount = count($data);
 
 				for($i = 0; $i<$dataCount; $i++){
-					if($i==$dataCount-1){
+					if($i == $dataCount-1){
 						if(strpos($data[$i], '>Next')){
 							$next = explode("<a", explode(">Next", $data[$i])[0]);
 							$next = $next[count($next)-1];
@@ -906,19 +910,19 @@ namespace LittleYoutube{
 							$this->data['next'] = $next;
 						}
 					}
-					if(strpos($data[$i], '/playlist?list=')!==false){
+					if(strpos($data[$i], '/playlist?list=') !== false){
 						continue;
 					}
 					$videoID = explode('/watch?v=', $data[$i]);
 					if(count($videoID)==1) continue; //Not a video
-					if(strpos($videoID[1], 'list=')!==false) continue; //It's playlist
+					if(strpos($videoID[1], 'list=') !== false) continue; //It's playlist
 					$videoID = explode('"', $videoID[1])[0];
 
 					$title = explode('title="', $data[$i])[1];
 					$title = explode('"', $title)[0];
 
 					$duration = explode('Duration: ', $data[$i]);
-					if(count($duration)==1){
+					if(count($duration) === 1){
 						$duration = explode('video-time', $data[$i])[1];
 						$duration = explode('<', $duration)[0];
 						$duration = explode('>', $duration)[1];
@@ -929,9 +933,9 @@ namespace LittleYoutube{
 					}
 
 					$user = explode('/user/', $data[$i]);
-					if(count($user)==1)
+					if(count($user) === 1)
 						$user = explode('/channel/', $data[$i]);
-					if(count($user)!=1){
+					if(count($user) !== 1){
 						$user = explode('</a>', $user[1])[0];
 						$userID = explode('"', $user)[0];
 						$userName = explode('>', $user)[1];
@@ -944,7 +948,7 @@ namespace LittleYoutube{
 					$meta = explode('yt-lockup-meta-info', $data[$i])[1];
 					$meta = explode('</ul>', $meta)[0];
 					$meta = explode('<li>', $meta);
-					if(count($meta)==3)
+					if(count($meta) === 3)
 						$views = explode('</li>', $meta[2])[0];
 					$uploaded = explode('</li>', $meta[1])[0];
 
@@ -981,8 +985,13 @@ namespace ScarletsFiction{
 	class WebApi
 	{
 		public static function loadURL($url, $options=false){
-			$ch = curl_init($url);
-			curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36');
+			$ch = curl_init();
+    		curl_setopt($ch, CURLOPT_URL, $url);
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+			curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+			curl_setopt($ch, CURLOPT_TIMEOUT, 600); // 10 min
 		
 			$headers = ['Accept: */*;q=0.8', 'Accept-Language: en-US,en;q=0.5', 'Connection: keep-alive'];
 			if($options){
@@ -1004,25 +1013,32 @@ namespace ScarletsFiction{
 					curl_setopt($ch, CURLOPT_PROXY, '128.0.0.3');
 					curl_setopt($ch, CURLOPT_PROXYPORT, '8080');
 				}
+				if(isset($data['progress']) && $data['progress']){
+					curl_setopt($resource, CURLOPT_PROGRESSFUNCTION, $data['progress']);
+					curl_setopt($resource, CURLOPT_NOPROGRESS, false);
+				}
+				if(isset($data['file'])){
+					curl_setopt($ch, CURLOPT_FILE, $data['file']);
+					curl_exec($ch);
+					curl_close($ch);
+				}
 			}
+			curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36');
 			curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 			curl_setopt($ch, CURLOPT_ENCODING, "gzip");
-			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-			curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-			curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
 			curl_setopt($ch, CURLOPT_HEADER, 1);
 			curl_setopt($ch, CURLINFO_HEADER_OUT, 1);
+
 			$data = curl_exec($ch);
 			
 			$header  = curl_getinfo($ch);
-			if($header['http_code']!=200){
+			if($header['http_code'] !== 200){
 				curl_close($ch);
 				//echo("Connection error: ".$header['http_code']);
 				return ['headers'=>'', 'content'=>'', 'cookies'=>''];
 			}
 			$myHeader = $header['request_header'];
-			curl_close( $ch );
+			curl_close($ch);
 		
 			$header_content = substr($data, 0, $header['header_size']);
 			$body_content = trim(str_replace($header_content, '', $data));
@@ -1033,6 +1049,27 @@ namespace ScarletsFiction{
 			$data = ['headers'=>$header_content, 'content'=>$body_content, 'cookies'=>$cookies];
 			return $data;
 		}
+
+		public static function downloadFile($from, $to){
+			$chunk = 1024*1024;
+			$bytes = 0;
+			$source = fopen($from, 'rb');
+			$dest = fopen($to, 'w');
+
+			if($source === false)
+			  return false;
+
+			while (!feof($source)) {
+			  	$data = fread($source, $chunk);
+			  	fwrite($dest, $data, strlen($data));
+			  	$bytes += strlen($data);
+			}
+
+			fclose($source);
+			fclose($dest);
+			return $bytes;
+		}
+
 		public static function urlContentSize($url){
 			$data = self::loadURL($url, ['headerOnly'=>true]);
 			$size = 0;
@@ -1050,7 +1087,7 @@ namespace ScarletsFiction{
 		public static function fileSize($bytes, $decimals=2) {
 			$sz = 'BKMGTP';
 			$factor = floor((strlen($bytes) - 1) / 3);
-			return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)).' '.@$sz[$factor].($factor!=0?'B':'ytes');
+			return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)).' '.@$sz[$factor].($factor !== 0?'B':'ytes');
 		}
 	}
 
@@ -1101,11 +1138,37 @@ namespace ScarletsFiction{
 		}
 	}
 
-	class Converter{
-		public static function ffmpeg($file, $target, $options) {
-			$sz = 'BKMGTP';
-			$factor = floor((strlen($bytes) - 1) / 3);
-			return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)).' '.@$sz[$factor].($factor!=0?'B':'ytes');
+	class Extra{
+		public static function combineMediaURL($video, $audio, $options){
+			$uniqID = time().rand(1, 1000);
+			$tempDir = str_replace('\\', '/', $options['temporaryDirectory']);
+			$ffmpeg = $options['ffmpeg'];
+			$copyAs = isset($options['copyAs']) ? $options['copyAs'] : false;
+			$progressCallback = isset($options['progressCallback']) ? $options['progressCallback'] : false;
+
+			if(strpos(shell_exec("$ffmpeg -version"), 'libavcodec') === false)
+				return trigger_error("'libavcodec' was not found or 'ffmpeg' path is not found");
+
+			if($progressCallback && !is_callable($progressCallback))
+				return trigger_error("'progressCallback' is not callable from global scope");
+
+			if(WebApi::downloadFile($video, "$tempDir/$uniqID.ytvideo") === 0) return trigger_error("Couldn't download video");
+			if(WebApi::downloadFile($audio, "$tempDir/$uniqID.ytaudio") === 0) return trigger_error("Couldn't download audio");
+
+			if($copyAs === 'webm')
+				$target = "-c copy \"$tempDir/$uniqID.webm\"";
+			elseif($copyAs === "mp4")
+				$target = "-c copy \"$tempDir/$uniqID.mp4\"";
+			else{
+				$copyAs = 'mp4'; // Faster than webm
+				$target = "\"$tempDir/$uniqID.mp4\"";
+			}
+
+			shell_exec("$ffmpeg -i \"$tempDir/$uniqID.ytvideo\" -i \"$tempDir/$uniqID.ytaudio\" $target");
+			unlink("$tempDir/$uniqID.ytvideo");
+			unlink("$tempDir/$uniqID.ytaudio");
+
+			return "$uniqID.$copyAs";
 		}
 	}
 }

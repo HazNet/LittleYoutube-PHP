@@ -7,6 +7,7 @@ $error = '';
 $haveError = "Please check error on the /example/error.log";
 $options = [
 	'temporaryDirectory'=>realpath("./temp"),
+	'ffmpeg'=>'ffmpeg',
 	'signatureDebug'=>realpath("./signatureDebug.log"),
 	'processVideoFrom'=>'VideoPage',
 	'onError'=>'throw'
@@ -15,6 +16,14 @@ $handler = null;
 
 # Catch any error
 try{
+
+	# Combine media URL
+	if(isset($_REQUEST['combine'])){
+		$options['copyAs'] = $_REQUEST['copyAs'];
+		$path = ScarletsFiction\Extra::combineMediaURL($_REQUEST['video'], $_REQUEST['audio'], $options);
+
+		die(json_encode(["path"=>$path]));
+	}
 
 	# Get video data
 	if(isset($_REQUEST['video'])){

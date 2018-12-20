@@ -52,7 +52,8 @@
 					<div id="adaptive" style="display: none">
 						<label>Adaptive (Audio/Video only):</label>
 						<div class="button-group">
-						</div>
+						</div><br>
+						<a id="mediaCombiner" onclick="initMediaCombiner()" type="button" class="btn btn-secondary">Media combiner</a>
 					</div><br><br>
 					<div id="subtitle" style="display: none">
 						<label>Subtitle:</label>
