@@ -1050,8 +1050,8 @@ namespace ScarletsFiction{
 			return $data;
 		}
 
-		public static function downloadFile($from, $to){
-			$chunk = 1024*1024;
+		public static function downloadFile($from, $to, $chunkMB=20){
+			$chunk = $chunkMB*1024*1024;
 			$bytes = 0;
 			$source = fopen($from, 'rb');
 			$dest = fopen($to, 'w');
