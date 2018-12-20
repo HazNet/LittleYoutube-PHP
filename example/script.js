@@ -105,7 +105,7 @@ $('#adaptive .button-group').on('click', 'a', function(ev){
 var mediaCombinerFinished = '';
 function initMediaCombiner(){
 	if(mediaCombinerFinished){
-		window.open(mediaCombinerFinished, '_blank');
+		window.open('example/temp/'.mediaCombinerFinished, '_blank');
 
 		// Wait if the user want to click the link again
 		setTimeout(function(){
