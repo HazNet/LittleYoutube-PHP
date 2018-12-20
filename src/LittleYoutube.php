@@ -1147,13 +1147,13 @@ namespace ScarletsFiction{
 			$progressCallback = isset($options['progressCallback']) ? $options['progressCallback'] : false;
 
 			if(strpos(shell_exec("$ffmpeg -version"), 'libavcodec') === false)
-				return trigger_error("'libavcodec' was not found or 'ffmpeg' path is not found");
+				throw new \Exception("'libavcodec' was not found or 'ffmpeg' path is not found");
 
 			if($progressCallback && !is_callable($progressCallback))
-				return trigger_error("'progressCallback' is not callable from global scope");
+				throw new \Exception("'progressCallback' is not callable from global scope");
 
-			if(WebApi::downloadFile($video, "$tempDir/$uniqID.ytvideo") === 0) return trigger_error("Couldn't download video");
-			if(WebApi::downloadFile($audio, "$tempDir/$uniqID.ytaudio") === 0) return trigger_error("Couldn't download audio");
+			if(WebApi::downloadFile($video, "$tempDir/$uniqID.ytvideo") === 0) throw new \Exception("Couldn't download video");
+			if(WebApi::downloadFile($audio, "$tempDir/$uniqID.ytaudio") === 0) throw new \Exception("Couldn't download audio");
 
 			if($copyAs === 'webm')
 				$target = "-c copy \"$tempDir/$uniqID.webm\"";
