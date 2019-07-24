@@ -278,7 +278,7 @@ namespace LittleYoutube{
 
 					// Renew decipher script if first try was failed
 					for($i=0; $i < 2; $i++){
-						$signature = '&signature='.$this->decipherSignature($map_info['s'], $i);
+						$signature = '&sig='.$this->decipherSignature($map_info['s'], $i);
 						$map['url'] = $map_info['url'].$signature.'&title='.urlencode($this->data['title']);
 						
 						if($this->settings['loadVideoSize']){
@@ -884,12 +884,12 @@ namespace LittleYoutube{
 					$videoID = $dat['videoId'];
 					$title = $dat['title']['simpleText'];
 					$description = '';
-					$description_ = isset($dat['descriptionSnippet'])?$dat['descriptionSnippet']['runs']:[];
+					$description_ = isset($dat['descriptionSnippet']['runs'])?$dat['descriptionSnippet']['runs']:[];
 					for ($i=0; $i < count($description_); $i++) { 
 						$description .= $description_[$i]['text'];
 					}
-					$duration = isset($dat['lengthText'])?$dat['lengthText']['simpleText']:'?';
-					$userName = isset($dat['ownerText'])?$dat['ownerText']['runs'][0]['text']:'?';
+					$duration = isset($dat['lengthText']['simpleText'])?$dat['lengthText']['simpleText']:'?';
+					$userName = isset($dat['ownerText']['runs'][0]['text'])?$dat['ownerText']['runs'][0]['text']:'?';
 					$views = isset($dat['viewCountText']['simpleText'])?$dat['viewCountText']['simpleText']:'?';
 					$uploaded = isset($dat['publishedTimeText'])?$dat['publishedTimeText']:'?';
 					$this->data['videos'][] = ['videoID'=>$videoID, 'title'=>$title, 'duration'=>$duration, 'user'=>$userName, 'uploaded'=>$uploaded, 'views'=>$views, 'description'=>$description];
