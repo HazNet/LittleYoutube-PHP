@@ -122,9 +122,12 @@ namespace LittleYoutube{
 					$related_['channelName'] = $related_['channelID']['text'];
 					$related_['channelID'] = $related_['channelID']['navigationEndpoint']['browseEndpoint']['browseId'];
 
-					$related_['viewCount'] = $videoInfo['viewCountText']['simpleText'];
-					$related_['viewCount'] = explode(' ', $related_['viewCount'])[0];
-					$related_['viewCount'] = implode('', explode(',', $related_['viewCount']));
+					if(isset($videoInfo['viewCountText']['simpleText']) !== false){
+						$related_['viewCount'] = $videoInfo['viewCountText']['simpleText'];
+						$related_['viewCount'] = explode(' ', $related_['viewCount'])[0];
+						$related_['viewCount'] = implode('', explode(',', $related_['viewCount']));
+					}
+					else $related_['viewCount'] = 0;
 
 					$related_['duration'] = 0;
 					if(isset($videoInfo['lengthText']))
@@ -185,7 +188,7 @@ namespace LittleYoutube{
 
 			$streamingData = $data['streamingData'];
 			if($videoDetails['isLiveContent']){
-				$this->data['video'] = ["stream"=>$data['hlsvp']];
+				$this->data['video'] = ["stream"=>$streamingData['hlsManifestUrl']];
 				$this->data['uploaded'] = "Live Now!";
 			}
 			else{
