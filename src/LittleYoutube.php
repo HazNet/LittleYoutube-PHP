@@ -139,57 +139,60 @@ namespace LittleYoutube{
 				$data = explode(';ytplayer.load', $data);
 				$data = $data[0];
 				$data = json_decode($data, true);
-				unset($data['args']['fflags']);
 				// Fallback version if using older browser --> $this->parseVideoDetailFallback($data);
 
 				$this->getPlayerScript($data['assets']['js']);
-				if(!isset($data['args']['title'])){
+				if(!isset($data['args']['player_response'])){
 					$this->onError("Video not exist");
 					return false;
 				}
-				$data = $data['args'];
+
+				$data = json_decode($data['args']['player_response'], true);
 			}
 			elseif($this->settings['processVideoFrom'] === 'VideoInfo'){
-				$data_ = \ScarletsFiction\WebApi::loadURL('http://www.youtube.com/get_video_info?video_id='.$id."&el=detailpage&hl=en_US")['content'];
+				$data_ = \ScarletsFiction\WebApi::loadURL('https://www.youtube.com/get_video_info?video_id='.$id."&el=detailpage&hl=en_US")['content'];
 				parse_str($data_, $data);
+
+				try{
+					$playerID = explode('.', explode('watermark-', $data['watermark'])[1])[0];
+					$this->getPlayerScript("/yts/jsbin/player_ias-$playerID/en_US/base.js");
+				} catch(\Exception $e){
+					$this->onError("Failed to obtain player script");
+				}
+
+				$data = json_decode($data['player_response'], true);
 			}
 
 			$this->parseVideoInfo($data);
 		}
 
+		// parse player_response's json
 		private function parseVideoInfo($data){
-			$this->data['title'] = $data['title'];
-			$this->data['duration'] = $data['length_seconds'];
-			$this->data['channelID'] = $data['ucid'];
-			$this->data['channelName'] = $data['author'];
+			$videoDetails = $data['videoDetails'];
+			$this->data['title'] = $videoDetails['title'];
+			$this->data['duration'] = $videoDetails['lengthSeconds']+0;
+			$this->data['channelID'] = isset($videoDetails['channelId']) ? $videoDetails['channelId'] : null;
+			$this->data['channelName'] = $videoDetails['author'];
+			$this->data['viewCount'] = $videoDetails['viewCount']+0;
 
-			if(isset($data['view_count']))
-				$this->data['viewCount'] = $data['view_count'];
-			else 
-				$this->data['viewCount'] = 0;
-
-			$subtitle = json_decode($data['player_response'], true);
-			if(isset($subtitle['captions'])&&isset($subtitle['captions']['playerCaptionsTracklistRenderer']['captionTracks'])){
-				$this->data['subtitle'] = $subtitle['captions']['playerCaptionsTracklistRenderer']['captionTracks'];
+			if(isset($data['captions']['playerCaptionsTracklistRenderer']['captionTracks'])){
+				$this->data['subtitle'] = $data['captions']['playerCaptionsTracklistRenderer']['captionTracks'];
 				foreach ($this->data['subtitle'] as &$value) {
 					$value = ['url'=>$value['baseUrl'], 'lang'=>$value['languageCode']];
 				}
-			} else $this->data['subtitle'] = false;
-			if(isset($data['livestream'])&&$data['livestream']){
+			}
+			else $this->data['subtitle'] = false;
+
+			$streamingData = $data['streamingData'];
+			if($videoDetails['isLiveContent']){
 				$this->data['video'] = ["stream"=>$data['hlsvp']];
 				$this->data['uploaded'] = "Live Now!";
 			}
 			else{
-				$streamMap = [[],[]];
-				if(isset($data['url_encoded_fmt_stream_map'])){
-					$streamMap[0] = explode(',', $data['url_encoded_fmt_stream_map']);
-					if(count($streamMap[0])) $streamMap[0] =  $this->streamMapToArray($streamMap[0]);
-				}
-				if(isset($data['adaptive_fmts'])){
-					$streamMap[1] = explode(',', $data['adaptive_fmts']);
-					if(count($streamMap[1])) $streamMap[1] =  $this->streamMapToArray($streamMap[1]);
-				}
-				$this->data['video'] = ["encoded"=>$streamMap[0], "adaptive"=>$streamMap[1]];
+				$this->data['video'] = [
+					"encoded"=>$this->streamMapToArray($streamingData['formats']),
+					"adaptive"=>$this->streamMapToArray($streamingData['adaptiveFormats'])
+				];
 			}
 		}
 
@@ -250,44 +253,24 @@ namespace LittleYoutube{
 
 		private function streamMapToArray($streamMap)
 		{
-			foreach($streamMap as &$map)
+			foreach($streamMap as &$map_info)
 			{
-				parse_str($map, $map_info);
-				parse_str(urldecode($map_info['url']), $url_info);
-
 				$map = [];
+				// parse_str($map, $map_info);
 				$map['itag'] = $map_info['itag'];
-				$map['type'] = explode(';', $map_info['type']);
-				$format = explode('/', $map['type'][0]);
-				$encoder = explode('"', $map['type'][1])[1];
-				$map['type'] = array_merge($format, [$encoder]);
-				$map['expire'] = isset($url_info['expire'])?$url_info['expire']:0;
+				$map['type'] = explode('/', explode(';', $map_info['mimeType'])[0]);
+				$map['expire'] = 0;
 
 				if(isset($map_info['bitrate']))
-					$map['quality'] = isset($map_info['quality_label'])?$map_info['quality_label']:round($map_info['bitrate']/1000).'k';
+					$map['quality'] = isset($map_info['qualityLabel'])?$map_info['qualityLabel']:round($map_info['bitrate']/1000).'k';
 				else
-					$map['quality'] = isset($map_info['quality'])?$map_info['quality']:'';
+					$map['quality'] = isset($map_info['quality'])?$map_info['quality']:($map_info['height']+'p');
 		
-				$signature = '';
-
 				// The video signature need to be deciphered
 				if(isset($map_info['s']))
 				{
 					if(strpos($map_info['url'], 'ratebypass=') === false)
 						$map_info['url'] .= '&ratebypass=yes';
-
-					// Renew decipher script if first try was failed
-					for($i=0; $i < 2; $i++){
-						$signature = '&sig='.$this->decipherSignature($map_info['s'], $i);
-						$map['url'] = $map_info['url'].$signature.'&title='.urlencode($this->data['title']);
-						
-						if($this->settings['loadVideoSize']){
-							$size = \ScarletsFiction\WebApi::urlContentSize($map['url']);
-							$map['size'] = \ScarletsFiction\FileApi::fileSize($size);
-							if($map['size']!=0)
-								break;
-						} else break;
-					}
 		
 					if($this->settings['useRedirector']){
 						//Change to redirector
@@ -297,11 +280,9 @@ namespace LittleYoutube{
 					}
 				} 
 				else $map['url'] = $map_info['url'].'&title='.urlencode($this->data['title']);
-				
-				if($this->settings['loadVideoSize']) {
-					$size = \ScarletsFiction\WebApi::urlContentSize($map['url']);
-					$map['size'] = \ScarletsFiction\FileApi::fileSize($size);
-				}
+
+				$map['size'] = \ScarletsFiction\FileApi::fileSize($map_info['contentLength']+0);
+				$map_info = $map;
 			}
 			return $streamMap;
 		}
