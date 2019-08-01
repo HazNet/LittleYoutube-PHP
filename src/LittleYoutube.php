@@ -256,7 +256,6 @@ namespace LittleYoutube{
 			foreach($streamMap as &$map_info)
 			{
 				$map = [];
-				// parse_str($map, $map_info);
 				$map['itag'] = $map_info['itag'];
 				$map['type'] = explode('/', explode(';', $map_info['mimeType'])[0]);
 				$map['expire'] = 0;
@@ -265,12 +264,12 @@ namespace LittleYoutube{
 					$map['quality'] = isset($map_info['qualityLabel'])?$map_info['qualityLabel']:round($map_info['bitrate']/1000).'k';
 				else
 					$map['quality'] = isset($map_info['quality'])?$map_info['quality']:($map_info['height']+'p');
-		
+
 				// The video signature need to be deciphered
-				if(isset($map_info['s']))
+				if(isset($map_info['cipher']) !== false)
 				{
-					if(strpos($map_info['url'], 'ratebypass=') === false)
-						$map_info['url'] .= '&ratebypass=yes';
+					parse_str($map_info['cipher'], $url);
+					$map['url'] = "$url[url]&$url[sp]=".$this->decipherSignature($url['s'], 0);
 		
 					if($this->settings['useRedirector']){
 						//Change to redirector
@@ -278,9 +277,9 @@ namespace LittleYoutube{
 						$subdomain = explode("//", $subdomain)[1];
 						$map['url'] = str_replace($subdomain, 'redirector', $map['url']);
 					}
-				} 
-				else $map['url'] = $map_info['url'].'&title='.urlencode($this->data['title']);
+				}
 
+				$map['url'] = $map['url'].'&title='.urlencode($this->data['title']);
 				$map['size'] = \ScarletsFiction\FileApi::fileSize($map_info['contentLength']+0);
 				$map_info = $map;
 			}
