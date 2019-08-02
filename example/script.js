@@ -1,3 +1,4 @@
+// Sorry for the bad code style
 var buttonTemplate = '<a target="_blank" href="*url*" type="button" class="btn btn-secondary">*text*</a>';
 var listGroupTemplate = '<a target="_blank" href="*url*" class="list-group-item"><img src="*picture*" alt="" style="display: inline-block;width:200px"/><div style="width: 70%;"><div class="d-flex w-100 justify-content-between" style="margin-left: 10px;"><h5 class="mb-1">*title*</h5><small class="text-muted">*floatrightinfo*</small></div><p class="mb-1" style="margin-left: 10px;">*desc*</p><small class="text-muted">*bottominfo*</small></div></a>';
 
@@ -165,12 +166,26 @@ function channelButton(){
         	return;
     	}
 		$("#channelError").html('');
+
 		var list = json.data.playlists;
-		$('#channelGroupList').html('');
+		$('#channelGroupList').html('<label>Playlists:</label>');
 		for (var i = 0; i < list.length; i++) {
 			$('#channelGroupList').append(buttonTemplate
 				.replace("*url*", 'https://www.youtube.com/playlist?list='+list[i].playlistID)
 				.replace("*text*", list[i].title)
+			);
+		}
+
+		var list = json.data.videos;
+		$('#channelGroupList').append('<br><label>Videos:</label>');
+		for (var i = 0; i < list.length; i++) {
+			$('#channelGroupList').append(listGroupTemplate
+				.replace("*bottominfo*", '')
+				.replace("*floatrightinfo*", '')
+				.replace("*title*", list[i].title)
+				.replace("*desc*", 'viewed '+list[i].viewCount)
+				.replace("*url*", "https://www.youtube.com/watch?v="+list[i].videoID)
+				.replace("*picture*", 'http://i1.ytimg.com/vi/'+list[i].videoID+'/mqdefault.jpg')
 			);
 		}
 	}, function(text){
