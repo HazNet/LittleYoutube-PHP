@@ -48,12 +48,12 @@ This library is developed to help the community.
 ### Download via composer
 
 Add LittleYoutube to composer.json configuration file.
-```
+```sh
 $ composer require scarletsfiction/littleyoutube
 ```
 
 And update it
-```
+```sh
 $ composer update
 ```
 
@@ -74,7 +74,7 @@ $ composer update
 ### LittleYoutube Options
 
 Available options
-```
+```js
 {
     // Must be set to save the decipher logic
     "temporaryDirectory"=>realpath("./temp"),
@@ -108,14 +108,14 @@ Return video class
 > $video->getImage();
 
 Return Indexed Array
-```
+```js
 [ "HighQualityURL", "MediumQualityURL", "DefaultQualityURL" ]
 ```
 
 #### Get embed link
 > $video->getEmbedLink();
 
-```
+```php
 // Usually we will wrap it with iframe
 
 echo('<iframe width="480" height="360" src="'.$video->getEmbedLink().'" frameborder="0" allowfullscreen></iframe>');
@@ -128,7 +128,7 @@ echo('<iframe width="480" height="360" src="'.$video->getEmbedLink().'" framebor
 >  * asSRT: return as srt format
 >  * note: if you pass subtitle index, ProcessDetails must be enabled/called
 
-```
+```js
 [
     [0]=>[
         [time] => 1.31,
@@ -145,7 +145,7 @@ echo('<iframe width="480" height="360" src="'.$video->getEmbedLink().'" framebor
 >  * You can also call $video->processDetails() to refresh data
 
 Return Associative Array of current video data
-```
+```js
 {
     "videoID"=>"",
 
@@ -213,7 +213,7 @@ https://www.youtube.com/feeds/videos.xml?channel_id=...
 >  * You can also call $channel->processDetails() to refresh data
 
 Return Associative Array of current channel data
-```
+```js
 {
     //Some data will available when ProcessDetail was enabled/called
     "channelID", "userID",
@@ -223,6 +223,15 @@ Return Associative Array of current channel data
             "playlistID"=>""
             "title"=>"",
             "length"=>0
+        },
+        ...
+    ]
+
+    "videos"=>[
+        [0]=>{
+            "videoID"=>""
+            "title"=>"",
+            "viewCount"=>0
         },
         ...
     ]
@@ -243,7 +252,7 @@ Return playlist class
 >  * You can also call $playlist->processDetails() to refresh data
 
 Return string
-```
+```js
 {
   //Some data will available when ProcessDetail was enabled/called
   "playlistID", "channelID", "userID",
@@ -275,7 +284,7 @@ Return search class
 >  * You can also call $search->processDetails() to refresh data
 
 Return string
-```
+```js
 {
   "query",
 
@@ -295,12 +304,6 @@ Return string
 > $search->next();
 
 This will add result from the next page to current data
-
-### Previous result
-> $search->previous();
-
-This will add result from the previous page to current data
-> Actually this is useless might
 
 ### Change settings dynamically
 You can also change the settings after initialize LittleYoutube class
