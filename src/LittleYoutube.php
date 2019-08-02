@@ -762,13 +762,13 @@ namespace LittleYoutube{
 			foreach ($value['items'] as $value_){
 				$values = $value_['gridVideoRenderer'];
 
-				$length = extractYTText($values['videoCountText'], 0);
+				$length = extractYTText($values['viewCountText'], 0);
 				$length = str_replace(',', '', explode(' ', $length)[0]);
 
 				$this->data['videos'][] = [
 					"title"=>extractYTText($values['title']),
 					"videoID"=>$values['videoId'],
-					"length"=>$length
+					"viewCount"=>$length
 				];
 			}
 			return true;
