@@ -12,6 +12,24 @@
 ***/
 
 namespace LittleYoutube{
+	function extractYTInitialData($source){
+		$data = explode('ytInitialData"] = ', $source);
+		if(count($data) === 1){
+			$this->onError("Failed to obtain data");
+			return false;
+		}
+		$data = explode('};', $data[1])[0].'}';
+		return json_decode($data, true);
+	}
+
+	function &extractYTText(&$var, $default='?'){
+		if(isset($var['simpleText']))
+			return $var['simpleText'];
+		if($var['runs'][0]['text'])
+			return $var['runs'][0]['text'];
+		return $default;
+	}
+
 	class LittleYoutubeInfo{
 		public $error;
 		public $data;
@@ -116,22 +134,14 @@ namespace LittleYoutube{
 
 					$related_ = [];
 					$related_['videoID'] = $videoInfo['videoId'];
-					$related_['title'] = $videoInfo['title']['simpleText'];
+					$related_['title'] = extractYTText($videoInfo['title']);
 
 					$related_['channelID'] = $videoInfo['longBylineText']['runs'][0];
 					$related_['channelName'] = $related_['channelID']['text'];
 					$related_['channelID'] = $related_['channelID']['navigationEndpoint']['browseEndpoint']['browseId'];
 
-					if(isset($videoInfo['viewCountText']['simpleText']) !== false){
-						$related_['viewCount'] = $videoInfo['viewCountText']['simpleText'];
-						$related_['viewCount'] = explode(' ', $related_['viewCount'])[0];
-						$related_['viewCount'] = implode('', explode(',', $related_['viewCount']));
-					}
-					else $related_['viewCount'] = 0;
-
-					$related_['duration'] = 0;
-					if(isset($videoInfo['lengthText']))
-						$related_['duration'] = $videoInfo['lengthText']['simpleText'];
+					$related_['viewCount'] = extractYTText($videoInfo['viewCountText'], 0);
+					$related_['duration'] = extractYTText($videoInfo['lengthText'], 0);
 
 					$related[$i] = $related_;
 				}
@@ -704,16 +714,13 @@ namespace LittleYoutube{
 
 			// Playlists
 			$value = \ScarletsFiction\WebApi::loadURL($data[0])['content'];
-			$value = explode('ytInitialData"] = ', $value)[1];
-			$value = explode('};', $value)[0].'}';
-			$value = json_decode($value, true);
+			$value = extractYTInitialData($value);
 			$user = $value['header']['c4TabbedHeaderRenderer'];
 			$this->data['channelID'] = $user['channelId'];
 			$this->data['userData'] = [
 				"name"=>$user['title'],
 				"image"=>$user['avatar']['thumbnails'][0]['url']
 			];
-
 			$value = $value['contents']['twoColumnBrowseResultsRenderer']['tabs'][2]['tabRenderer']['content']['sectionListRenderer']['contents'][0]['itemSectionRenderer']['contents'][0];
 
 			if(isset($value['gridRenderer'])){
@@ -729,9 +736,39 @@ namespace LittleYoutube{
 			foreach ($value['items'] as $value_){
 				$values = $value_['gridPlaylistRenderer'];
 				$this->data['playlists'][] = [
-					"title"=>$values['title']['runs'][0]['text'],
+					"title"=>extractYTText($values['title']),
 					"playlistID"=>$values['playlistId'],
-					"length"=>$values['videoCountText']['simpleText']
+					"length"=>extractYTText($values['videoCountShortText'], 0)
+				];
+			}
+
+			// Videos
+			$value = \ScarletsFiction\WebApi::loadURL($data[1])['content'];
+			$value = extractYTInitialData($value);
+
+			$value = $value['contents']['twoColumnBrowseResultsRenderer']['tabs'][1]['tabRenderer']['content']['sectionListRenderer']['contents'][0]['itemSectionRenderer']['contents'][0];
+
+			if(isset($value['gridRenderer'])){
+				$value = $value['gridRenderer'];
+			}
+			elseif(isset($value['shelfRenderer'])){
+				$value = $value['shelfRenderer']['content']['gridRenderer'];
+			}
+			else{
+				$this->onError("Can't obtain videos from this channel");
+				return false;
+			}
+
+			foreach ($value['items'] as $value_){
+				$values = $value_['gridVideoRenderer'];
+
+				$length = extractYTText($values['videoCountText'], 0);
+				$length = str_replace(',', '', explode(' ', $length)[0]);
+
+				$this->data['videos'][] = [
+					"title"=>extractYTText($values['title']),
+					"videoID"=>$values['videoId'],
+					"length"=>$length
 				];
 			}
 			return true;
@@ -775,9 +812,7 @@ namespace LittleYoutube{
 			}
 			$data = explode('data-title="', $data);
 			if(count($data) === 1){
-				$data = explode('ytInitialData"] = ', $data[0])[1];
-				$data = explode('};', $data)[0].'}';
-				$data = json_decode($data, true);
+				$data = extractYTInitialData($data[0]);
 
 				if(!isset($data['sidebar'])){
 					$this->onError("This feature can't be used for a playlist created by Youtube");
@@ -785,7 +820,7 @@ namespace LittleYoutube{
 				}
 				$user = $data['sidebar']['playlistSidebarRenderer']['items'][1]['playlistSidebarSecondaryInfoRenderer']['videoOwner']['videoOwnerRenderer'];
 				$this->data['userData'] = [
-					"name"=>$user['title']['runs'][0]['text'],
+					"name"=>extractYTText($user['title']),
 					"image"=>$user['thumbnail']['thumbnails'][0]['url']
 				];
 
@@ -848,13 +883,7 @@ namespace LittleYoutube{
 
 			$data = explode('yt-lockup-title', $data);
 			if(count($data) === 1){
-				$data = explode('ytInitialData"] = ', $data[0]);
-				if(count($data) === 1){
-					$this->onError("Failed to obtain data");
-					return false;
-				}
-				$data = explode('};', $data[1])[0].'}';
-				$data = json_decode($data, true);
+				$data = extractYTInitialData($data[0]);
 				if(!isset($data['contents']['twoColumnSearchResultsRenderer'])){
 					$this->onError("Failed to obtain data");
 					return false;
@@ -865,15 +894,15 @@ namespace LittleYoutube{
 					if(!isset($value['videoRenderer'])) continue;
 					$dat = $value['videoRenderer'];
 					$videoID = $dat['videoId'];
-					$title = $dat['title']['simpleText'];
+					$title = extractYTText($dat['title']);
 					$description = '';
 					$description_ = isset($dat['descriptionSnippet']['runs'])?$dat['descriptionSnippet']['runs']:[];
 					for ($i=0; $i < count($description_); $i++) { 
 						$description .= $description_[$i]['text'];
 					}
-					$duration = isset($dat['lengthText']['simpleText'])?$dat['lengthText']['simpleText']:'?';
-					$userName = isset($dat['ownerText']['runs'][0]['text'])?$dat['ownerText']['runs'][0]['text']:'?';
-					$views = isset($dat['viewCountText']['simpleText'])?$dat['viewCountText']['simpleText']:'?';
+					$duration = extractYTText($dat['lengthText']);
+					$userName = extractYTText($dat['ownerText']);
+					$views = extractYTText($dat['viewCountText']);
 					$uploaded = isset($dat['publishedTimeText'])?$dat['publishedTimeText']:'?';
 					$this->data['videos'][] = ['videoID'=>$videoID, 'title'=>$title, 'duration'=>$duration, 'user'=>$userName, 'uploaded'=>$uploaded, 'views'=>$views, 'description'=>$description];
 				}
