@@ -291,6 +291,7 @@ namespace LittleYoutube{
 						$map['url'] = str_replace($subdomain, 'redirector', $map['url']);
 					}
 				}
+				else $map['url'] = $map_info['url'];
 
 				$map['url'] = $map['url'].'&title='.urlencode($this->data['title']);
 				$map['size'] = \ScarletsFiction\FileApi::fileSize($map_info['contentLength']+0);
