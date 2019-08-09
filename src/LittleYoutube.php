@@ -294,7 +294,8 @@ namespace LittleYoutube{
 				else $map['url'] = $map_info['url'];
 
 				$map['url'] = $map['url'].'&title='.urlencode($this->data['title']);
-				$map['size'] = \ScarletsFiction\FileApi::fileSize($map_info['contentLength']+0);
+				$map['size'] = isset($map_info['contentLength']) ? $map_info['contentLength']+0 : 0;
+				$map['size'] = \ScarletsFiction\FileApi::fileSize($map['size']);
 				$map_info = $map;
 			}
 			return $streamMap;
