@@ -1101,7 +1101,7 @@ namespace ScarletsFiction{
 		public static function fileSize($bytes, $decimals=2) {
 			$sz = 'BKMGTP';
 			$factor = floor((strlen($bytes) - 1) / 3);
-			return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)).' '.@$sz[$factor].($factor !== 0?'B':'ytes');
+			return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)).' '.@$sz[(string)$factor].($factor !== 0?'B':'ytes');
 		}
 	}
 
