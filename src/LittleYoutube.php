@@ -306,7 +306,7 @@ namespace LittleYoutube{
 				$this->onError("videoID was not found");
 				return false;
 			}
-			return "//www.youtube.com/embed/".$this->data['videoID']."?rel=0";
+			return "https://www.youtube.com/embed/".$this->data['videoID']."?rel=0";
 		}
 
 		public function parseSubtitle($languageCodeOrURL, $as='srt'){
